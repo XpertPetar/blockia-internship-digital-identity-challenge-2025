@@ -4,21 +4,26 @@ import { getKeyPairs, signMessage, verifyMessage } from "../../utils/crypto";
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === "GET") {
         const { privateKey, publicKey } = getKeyPairs();
-        res.status(200).json({ privateKey, publicKey });
-    } else if (req.method === "POST" && req.body.message && req.body.privateKey) {
-        const { privateKey, message } = req.body;
-        const signature = signMessage(privateKey, message);
-        res.status(200).json({ signature });
-    } else if (
-        req.method === "POST" &&
-        req.body.message &&
-        req.body.publicKey &&
-        req.body.signature
-    ) {
-        const { publicKey, signature, message } = req.body;
-        const isVerified = verifyMessage(publicKey, signature, message);
-        res.status(200).json({ isVerified });
-    } else {
-        res.status(405).json({ error: "Invalid Method" });
+        return res.status(200).json({ privateKey, publicKey });
     }
+
+    if (req.method === "POST") {
+        const { mode, message, privateKey, publicKey, signature } = req.body;
+
+        if (mode === "sign" && privateKey && message) {
+            const signature = signMessage(privateKey, message);
+            return res.status(200).json({ signature });
+        }
+
+        if (mode === "verify" && publicKey && signature && message) {
+            const isVerified = verifyMessage(publicKey, signature, message);
+            return res
+                .status(200)
+                .json({ verified: isVerified, message: "Identity verified successfully" });
+        }
+
+        return res.status(400).json({ error: "Invalid Data" });
+    }
+
+    return res.status(405).json({ error: "Invalid Method" });
 }
