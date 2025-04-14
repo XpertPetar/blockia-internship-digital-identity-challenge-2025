@@ -14,7 +14,7 @@ BLOCKIA-PetarJosifoski-XpertP-20250414
 
 ## Instructions for running project
 
-clone repo
-cd into root directory of project
-npm install
+clone repo  
+cd into root directory of project  
+npm install  
 npm run dev
