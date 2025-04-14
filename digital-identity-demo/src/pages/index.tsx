@@ -8,7 +8,8 @@ export default function Home() {
     const github: string = "XpertP";
     const date: string = dayjs().format("YYYYMMDD");
     const message: string = `${blockia}-${name}-${github}-${date}`;
-    const [showSuccess, setShowSuccess] = useState(false);
+    const [showPopup, setShowPopup] = useState(false);
+    const [popupText, setPopUpText] = useState<string | null>(null);
 
     async function getKeyPairs(): Promise<{ privateKey: string; publicKey: string }> {
         let privateKey: string;
@@ -55,25 +56,70 @@ export default function Home() {
     async function handleLogin(): Promise<void> {
         try {
             const { privateKey, publicKey } = await getKeyPairs();
-            console.log(`Private Key: ${privateKey}\nPublic Key: ${publicKey}`);
-            const signature = await signMessage(message, privateKey);
-            console.log(`Signature: ${signature}`);
-            const isVerified: boolean = await verifyMessage(publicKey, message, signature);
-            console.log(`Verified login: ${isVerified}`);
 
-            if (isVerified) {
-                setShowSuccess(true);
-            } else {
-                console.error("Verification failed.");
-            }
+            setPopUpText(`Private Key: ${privateKey}`);
+            console.log(`Private Key: ${privateKey}`);
+            setShowPopup(true);
+
+            setTimeout(() => {
+                setPopUpText(`Public Key: ${publicKey}`);
+                console.log(`Private Key: ${publicKey}`);
+
+                setTimeout(async () => {
+                    const signature = await signMessage(message, privateKey);
+                    setPopUpText(`Signature: ${signature}`);
+                    console.log(`Signature: ${signature}`);
+
+                    setTimeout(async () => {
+                        const isVerified: boolean = await verifyMessage(
+                            publicKey,
+                            message,
+                            signature
+                        );
+
+                        if (isVerified) {
+                            setPopUpText(`Verification Successful!`);
+                            console.log(`Verification Successful!: ${isVerified}`);
+                        } else {
+                            setPopUpText(`Verification Failed.`);
+                            console.error("Verification failed.");
+                        }
+
+                        setTimeout(() => {
+                            setShowPopup(false);
+                        }, 2000);
+                    }, 2000);
+                }, 2000);
+            }, 2000);
         } catch (error) {
             console.error("Error during login", error);
+            setPopUpText(`Error during login.`);
+            setShowPopup(true);
+            setTimeout(() => {
+                setShowPopup(false);
+                setPopUpText(null);
+            }, 1500);
         }
     }
 
     return (
         <>
             <div className="bg-gray-900 w-full h-screen flex flex-col gap-6 items-center justify-center">
+                <div
+                    className={`px-4 py-6 w-1/3 flex flex-col items-center bg-blue-200/60 py-2 px-5 rounded-md text-blue-100 font-semibold border border-blue-100 absolute top-8 translate-y-[-10px] opacity-0 transition-all duration-600 ease-out
+                     ${showPopup ? "translate-y-20 opacity-100" : "translate-y-[-20px] opacity-0"}`}
+                >
+                    <img
+                        src={
+                            popupText === "Verification Successful!"
+                                ? "./check.png"
+                                : "./loading.gif"
+                        }
+                        className="w-18 h-18"
+                    ></img>
+                    <p className="text-center text-wrap break-words text-sm w-full">{popupText}</p>
+                </div>
+
                 <div className="bg-blue-200/60 w-1/3 rounded-md px-12 py-10 text-black flex flex-col border border-blue-100">
                     <h2 className="font-extrabold text-2xl text-center tracking-wider mb-4">
                         DIGITAL SIGNATURE<br></br>VERIFICATION
@@ -94,7 +140,6 @@ export default function Home() {
                         <button
                             onClick={() => {
                                 handleLogin();
-                                // setShowSuccess(true);
                             }}
                             className="bg-blue-100 text-blue-900 border border-gray-800 py-2 px-6 rounded-md font-semibold w-full cursor-pointer hover:bg-blue-200 text-md"
                         >
@@ -102,12 +147,6 @@ export default function Home() {
                         </button>
                     </div>
                 </div>
-
-                {showSuccess ? (
-                    <div className="bg-blue-200 py-2 px-5 rounded-md text-blue-900 font-semibold w-1/3 border border-blue-100">
-                        <p className="text-center">Your identity has been successfully verified.</p>
-                    </div>
-                ) : null}
             </div>
         </>
     );
